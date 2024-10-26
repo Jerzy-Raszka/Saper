@@ -153,7 +153,7 @@ int main() {
   }
 
   do {
-    printBoard(); // TODO Liczby rzędów i kolumn
+    printBoard(); // TODO Liczby rzędów, kolumn oraz wyrównanie
     makeMove();
   } while (gameRunning == true);
 
