@@ -1,6 +1,12 @@
+#include <conio.h>
 #include <iostream>
 #include <random>
 #include <stdio.h>
+
+#define MAXSIDES 25
+
+int sides, mines;
+bool gameRunning = true;
 
 class Field {
 public:
@@ -9,19 +15,45 @@ public:
   int Number = 0;
 };
 
-Field board[9][9];
+Field board[MAXSIDES][MAXSIDES];
 
 bool isValid(int row, int col) {
-  return ((row >= 0) && (row < 9) && (col >= 0) && (col < 9));
+  return ((row >= 0) && (row < sides) && (col >= 0) && (col < sides));
+}
+
+void chooseLevel() {
+  int level;
+  printf("Wybierz poziom trudności\n");
+  printf("Łatwy - wciśnij 0\n");
+  printf("Normlany - wciśnij 1\n");
+  printf("Trudny - wciśnij 2\n");
+  scanf("%d", &level);
+  switch (level) {
+  case 0:
+    sides = 9;
+    mines = 10;
+    break;
+  case 1:
+    sides = 16;
+    mines = 40;
+    break;
+  case 2:
+    sides = 25;
+    mines = 99;
+    break;
+  default:
+    printf("Wybrałeś zły numer, wybierz ponownie");
+    chooseLevel();
+  }
 }
 
 void placeMines() {
 
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_int_distribution<> distrib(0, 8);
+  std::uniform_int_distribution<> distrib(0, sides);
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < mines; i++) {
     int j = distrib(gen);
     int k = distrib(gen);
     if (board[j][k].isMine == true) {
@@ -35,16 +67,15 @@ void placeMines() {
 }
 
 void printBoard() {
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
-      if (board[i][j].isHidden == false) {
-        if (board[i][j].isMine == false) {
-          std::cout << board[i][j].Number;
-        } else {
-          std::cout << "*";
-        }
+
+  for (int i = 0; i < sides; i++) {
+    for (int j = 0; j < sides; j++) {
+      if (board[i][j].isHidden == true) {
+        std::cout << "-";
+      } else if (board[i][j].isMine == true) {
+        std::cout << "*";
       } else {
-        std::cout << "#";
+        std::cout << board[i][j].Number;
       }
     }
     std::cout << "\n";
@@ -89,31 +120,42 @@ void showZeros(int row, int col) {
     }
   }
 }
+
 void makeMove() {
   int x, y;
   printf("Podaj rząd oraz kolumne\n");
   scanf("%d %d", &x, &y);
-  showZeros(x, y);
+  if (board[x][y].isMine == true) {
+    for (int i = 0; i < sides; i++) {
+      for (int j = 0; j < sides; j++) {
+        board[i][j].isHidden = false;
+      }
+    }
+    printBoard();
+    printf("Trafiłeś na bombę, gameover\n");
+    gameRunning = false;
+  }
+  if (gameRunning == true) {
+    showZeros(x, y);
+  }
 }
 
 int main() {
 
+  chooseLevel();
+
   placeMines();
-  for (int i = 0; i < 9; i++) {
-    for (int j = 0; j < 9; j++) {
+
+  for (int i = 0; i < sides; i++) {
+    for (int j = 0; j < sides; j++) {
       assignNumbers(i, j);
     }
   }
-  printBoard();
 
-  makeMove();
-  printBoard();
-  makeMove();
-  printBoard();
-  makeMove();
-  printBoard();
-  makeMove();
-  printBoard();
+  do {
+    printBoard(); // TODO Liczby rzędów i kolumn
+    makeMove();
+  } while (gameRunning == true);
 
   return 0;
 }
