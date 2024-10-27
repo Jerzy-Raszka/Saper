@@ -74,14 +74,28 @@ void placeMines() {
 
 void printBoard() {
 
-  for (int i = 0; i < sides; i++) {
-    for (int j = 0; j < sides; j++) {
+  for (int i = -1; i < sides; i++) {
+    for (int j = -1; j < sides; j++) {
+      if (i == -1) {
+        for (int i = 0; i < sides; i++) {
+          if (i == 0) {
+            printf(" X ");
+          }
+          printf(" %d ", i);
+        }
+        printf("\n");
+        i++;
+      }
+      if (j == -1) {
+        printf(" %d ", i);
+        j++;
+      }
       if (board[i][j].isHidden) {
-        printf("-");
+        printf(" - ");
       } else if (board[i][j].isMine) {
-        printf("*");
+        printf(" * ");
       } else {
-        printf("%d", board[i][j].number);
+        printf(" %d ", board[i][j].number);
       }
     }
     printf("\n");
@@ -122,18 +136,24 @@ void makeMove() {
   int x, y;
   printf("Podaj rząd oraz kolumne\n");
   scanf("%d %d", &x, &y);
-  if (board[x][y].isMine) {
-    for (int i = 0; i < sides; i++) {
-      for (int j = 0; j < sides; j++) {
-        board[i][j].isHidden = false;
+  if (isFieldOnBoard(x, y)) {
+    if (board[x][y].isMine) {
+      for (int i = 0; i < sides; i++) {
+        for (int j = 0; j < sides; j++) {
+          board[i][j].isHidden = false;
+        }
       }
+      printBoard();
+      printf("Trafiłeś na bombę, gameover\n");
+      gameRunning = false;
     }
-    printBoard();
-    printf("Trafiłeś na bombę, gameover\n");
-    gameRunning = false;
-  }
-  if (gameRunning) {
-    showZeros(x, y);
+    if (gameRunning) {
+      showZeros(x, y);
+    }
+  } else {
+    printf("Podaj poprawny numer wiersza i kolumny\n");
+    fseek(stdin, 0, SEEK_END);
+    makeMove();
   }
 }
 
@@ -157,10 +177,6 @@ int main() {
     printBoard();
     makeMove();
   } while (gameRunning);
-
-  // TODO Liczby rzędów, kolumn oraz wyrównanie, make move w zakresie sides i
-  // sprawdzenie czy poprawny format, dodanie replacmantu bomby jesli za
-  // pierwszym ruhcem
 
   return 0;
 }
