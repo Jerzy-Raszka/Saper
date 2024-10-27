@@ -3,8 +3,8 @@
 #include <random>
 #include <stdio.h>
 
-uint8_t sides;
-uint8_t mines;
+uint8_t sides, mines;
+int moves;
 bool gameRunning = true;
 const int8_t dx[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
 const int8_t dy[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
@@ -35,14 +35,17 @@ void chooseLevel() {
       case 0:
         sides = 9;
         mines = 10;
+        moves = 71;
         break;
       case 1:
         sides = 16;
-        mines = 40;
+        mines = 216;
+        moves = 71;
         break;
       case 2:
         sides = 25;
         mines = 99;
+        moves = 526;
         break;
       default:
         printf("Wybrałeś zły numer, wybierz ponownie\n");
@@ -116,7 +119,10 @@ void assignNumbers(int row, int col) {
 
 void showZeros(int row, int col) {
   if (board[row][col].isHidden) {
+
     board[row][col].isHidden = false;
+    moves--;
+
     if (board[row][col].number == 0) {
       for (int d = 0; d < 8; d++) {
         int8_t newRow = row + dx[d];
@@ -125,7 +131,10 @@ void showZeros(int row, int col) {
           if (board[newRow][newCol].number == 0) {
             showZeros(newRow, newCol);
           }
-          board[newRow][newCol].isHidden = false;
+          if (board[newRow][newCol].isHidden) {
+            board[newRow][newCol].isHidden = false;
+            moves--;
+          }
         }
       }
     }
@@ -149,6 +158,10 @@ void makeMove() {
     }
     if (gameRunning) {
       showZeros(x, y);
+      if (moves == 0) {
+        printf("Wygrałes gratulacje\n");
+        gameRunning = false;
+      }
     }
   } else {
     printf("Podaj poprawny numer wiersza i kolumny\n");
@@ -176,6 +189,7 @@ int main() {
   do {
     printBoard();
     makeMove();
+
   } while (gameRunning);
 
   return 0;
