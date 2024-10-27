@@ -3,46 +3,54 @@
 #include <random>
 #include <stdio.h>
 
-#define MAXSIDES 25
-
-int sides, mines;
+uint8_t sides;
+uint8_t mines;
 bool gameRunning = true;
+const int8_t dx[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+const int8_t dy[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
 
 class Field {
 public:
   bool isMine = false;
   bool isHidden = true;
-  int Number = 0;
+  int number = 0;
 };
 
-Field board[MAXSIDES][MAXSIDES];
+std::vector<std::vector<Field>> board;
 
-bool isValid(int row, int col) {
-  return ((row >= 0) && (row < sides) && (col >= 0) && (col < sides));
+bool isFieldOnBoard(int row, int col) {
+  return row >= 0 && row < sides && col >= 0 && col < sides;
 }
 
 void chooseLevel() {
   int level;
+
   printf("Wybierz poziom trudności\n");
   printf("Łatwy - wciśnij 0\n");
   printf("Normlany - wciśnij 1\n");
   printf("Trudny - wciśnij 2\n");
-  scanf("%d", &level);
-  switch (level) {
-  case 0:
-    sides = 9;
-    mines = 10;
-    break;
-  case 1:
-    sides = 16;
-    mines = 40;
-    break;
-  case 2:
-    sides = 25;
-    mines = 99;
-    break;
-  default:
-    printf("Wybrałeś zły numer, wybierz ponownie");
+
+  if (scanf(" %d", &level) == 1 && level != '\n') {
+    switch (level) {
+      case 0:
+        sides = 9;
+        mines = 10;
+        break;
+      case 1:
+        sides = 16;
+        mines = 40;
+        break;
+      case 2:
+        sides = 25;
+        mines = 99;
+        break;
+      default:
+        printf("Wybrałeś zły numer, wybierz ponownie\n");
+        chooseLevel();
+    }
+  } else {
+    printf("Wprowadź numer poprawnie\n");
+    fseek(stdin, 0, SEEK_END);
     chooseLevel();
   }
 }
@@ -51,17 +59,15 @@ void placeMines() {
 
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_int_distribution<> distrib(0, sides);
+  std::uniform_int_distribution<> distrib(0, sides - 1);
 
   for (int i = 0; i < mines; i++) {
-    int j = distrib(gen);
-    int k = distrib(gen);
-    if (board[j][k].isMine == true) {
-
+    uint8_t j = distrib(gen);
+    uint8_t k = distrib(gen);
+    if (board[j][k].isMine) {
       i--;
-
     } else {
-      (board[j][k].isMine = true);
+      board[j][k].isMine = true;
     }
   }
 }
@@ -70,48 +76,39 @@ void printBoard() {
 
   for (int i = 0; i < sides; i++) {
     for (int j = 0; j < sides; j++) {
-      if (board[i][j].isHidden == true) {
-        std::cout << "-";
-      } else if (board[i][j].isMine == true) {
-        std::cout << "*";
+      if (board[i][j].isHidden) {
+        printf("-");
+      } else if (board[i][j].isMine) {
+        printf("*");
       } else {
-        std::cout << board[i][j].Number;
+        printf("%d", board[i][j].number);
       }
     }
-    std::cout << "\n";
+    printf("\n");
   }
 }
 
 void assignNumbers(int row, int col) {
-  int dx[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
-  int dy[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
 
   for (int d = 0; d < 8; d++) {
-    int newRow = row + dx[d];
-    int newCol = col + dy[d];
+    int8_t newRow = row + dx[d];
+    int8_t newCol = col + dy[d];
 
-    if (isValid(newRow, newCol) == true) {
-      if (board[newRow][newCol].isMine == true) {
-        board[row][col].Number++;
-      }
+    if ((isFieldOnBoard(newRow, newCol)) && (board[newRow][newCol].isMine)) {
+      board[row][col].number++;
     }
   }
 }
 
 void showZeros(int row, int col) {
-  if (board[row][col].isHidden == true) {
+  if (board[row][col].isHidden) {
     board[row][col].isHidden = false;
-    if (board[row][col].Number == 0) {
-      int dx[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
-      int dy[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
-
+    if (board[row][col].number == 0) {
       for (int d = 0; d < 8; d++) {
-        int newRow = row + dx[d];
-        int newCol = col + dy[d];
-
-        if (isValid(newRow, newCol) == true) {
-
-          if (board[newRow][newCol].Number == 0) {
+        int8_t newRow = row + dx[d];
+        int8_t newCol = col + dy[d];
+        if (isFieldOnBoard(newRow, newCol)) {
+          if (board[newRow][newCol].number == 0) {
             showZeros(newRow, newCol);
           }
           board[newRow][newCol].isHidden = false;
@@ -125,7 +122,7 @@ void makeMove() {
   int x, y;
   printf("Podaj rząd oraz kolumne\n");
   scanf("%d %d", &x, &y);
-  if (board[x][y].isMine == true) {
+  if (board[x][y].isMine) {
     for (int i = 0; i < sides; i++) {
       for (int j = 0; j < sides; j++) {
         board[i][j].isHidden = false;
@@ -135,7 +132,7 @@ void makeMove() {
     printf("Trafiłeś na bombę, gameover\n");
     gameRunning = false;
   }
-  if (gameRunning == true) {
+  if (gameRunning) {
     showZeros(x, y);
   }
 }
@@ -144,6 +141,10 @@ int main() {
 
   chooseLevel();
 
+  board.resize(sides);
+  for (int i = 0; i < sides; i++) {
+    board[i].resize(sides);
+  }
   placeMines();
 
   for (int i = 0; i < sides; i++) {
@@ -153,9 +154,13 @@ int main() {
   }
 
   do {
-    printBoard(); // TODO Liczby rzędów, kolumn oraz wyrównanie
+    printBoard();
     makeMove();
-  } while (gameRunning == true);
+  } while (gameRunning);
+
+  // TODO Liczby rzędów, kolumn oraz wyrównanie, make move w zakresie sides i
+  // sprawdzenie czy poprawny format, dodanie replacmantu bomby jesli za
+  // pierwszym ruhcem
 
   return 0;
 }
